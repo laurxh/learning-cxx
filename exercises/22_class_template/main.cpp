@@ -10,6 +10,10 @@ struct Tensor4D {
     Tensor4D(unsigned int const shape_[4], T const *data_) {
         unsigned int size = 1;
         // TODO: 填入正确的 shape 并计算 size
+        for (int i = 0; i < 4; ++i) {
+            shape[i] = shape_[i];
+            size *= shape[i];
+        }
         data = new T[size];
         std::memcpy(data, data_, size * sizeof(T));
     }
@@ -28,6 +32,34 @@ struct Tensor4D {
     // 则 `this` 与 `others` 相加时，3 个形状为 `[1, 2, 1, 4]` 的子张量各自与 `others` 对应项相加。
     Tensor4D &operator+=(Tensor4D const &others) {
         // TODO: 实现单向广播的加法
+        unsigned int o_s3 = 1;
+        unsigned int o_s2 = others.shape[3];
+        unsigned int o_s1 = others.shape[3] * others.shape[2];
+        unsigned int o_s0 = others.shape[3] * others.shape[2] * others.shape[1];
+
+        unsigned int t_s3 = 1;
+        unsigned int t_s2 = shape[3];
+        unsigned int t_s1 = shape[3] * shape[2];
+        unsigned int t_s0 = shape[3] * shape[2] * shape[1];
+
+        for (unsigned int i0 = 0; i0 < shape[0]; ++i0) {
+            unsigned int j0 = (others.shape[0] == 1) ? 0 : i0;
+            for (unsigned int i1 = 0; i1 < shape[1]; ++i1) {
+                unsigned int j1 = (others.shape[1] == 1) ? 0 : i1;
+                for (unsigned int i2 = 0; i2 < shape[2]; ++i2) {
+                    unsigned int j2 = (others.shape[2] == 1) ? 0 : i2;
+                    for (unsigned int i3 = 0; i3 < shape[3]; ++i3) {
+                        unsigned int j3 = (others.shape[3] == 1) ? 0 : i3;
+
+                        // 计算 this 和 others 的扁平化索引
+                        unsigned int this_idx = i0 * t_s0 + i1 * t_s1 + i2 * t_s2 + i3 * t_s3;
+                        unsigned int others_idx = j0 * o_s0 + j1 * o_s1 + j2 * o_s2 + j3 * o_s3;
+
+                        data[this_idx] += others.data[others_idx];
+                    }
+                }
+            }
+        }
         return *this;
     }
 };
